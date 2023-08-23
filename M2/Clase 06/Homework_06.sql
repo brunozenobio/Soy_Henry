@@ -1,8 +1,13 @@
 -- MODIFICAR VALORES
+#TRUCANTE TABLE tabla; 
+	#Para borrar los registros de la tabla y ademas volver los indices a 0
+	# Hay que tener cuidado porque si tengo tablas referenciadas con llave foranea dara un error
+	# Para esto puedo temporalmente desabilitar esa referencia
+	# SET foreign_key_checks = 0
 
 # Ejercicio 2
 DELETE FROM cohorte
-WHERE idCohorte = 1245 and idCohorte = 1246;
+WHERE idCohorte IN (1245,1246); 
 
 select date_format(fechaInicio,'%m-%d') from cohorte where idCohorte = 1243;
 
@@ -19,7 +24,7 @@ WHERE idAlumno = 165;
 -- MOSTRAR VALORES
 
 # Ejercicio 5
-SELECT nombre,fechaIngreso
+SELECT idAlumno,nombre,fechaIngreso
 FROM alumno
 WHERE idCohorte = 1243;
 
@@ -35,6 +40,12 @@ WHERE idCarrera = 1;
 SELECT *
 FROM instructor
 WHERE idInstructor IN (1,2,3,4,5);
+
+SELECT DISTINCT i.*
+FROM instructor i
+JOIN cohorte co ON co.idInstructor = i.idInstructor
+JOIN carrera c ON c.idCarrera = co.idCarrera
+WHERE c.nombre LIKE '%full%';
 
 
 
@@ -55,7 +66,7 @@ fechaIngreso BETWEEN '2019-01-01' AND '2019-12-31'; # ALTERNATIVA YEAR(fechaIngr
 # Ejercicio 9
 
 
-SELECT alumno.nombre, apellido, fechaNacimiento, carrera.nombre
+SELECT alumno.nombre, apellido, fechaNacimiento, carrera.nombre as NombeCarrera
 FROM alumno
 INNER JOIN cohorte
 ON cohorte.idCohorte=alumno.idCohorte
@@ -65,7 +76,7 @@ ON carrera.idCarrera = cohorte.idCarrera;
 
 /*
 a : Se puede acceder al nombre de la carrera desde alumnos por medio de idCohorte
-b : LA relacion es muchos a 1 muchos alumnos pertenecen a 1 cohorte
+b : LA relacion es muchos a 1 muchos alumnos pertenecen a 1 cohorte 
 c : 
 */
 
@@ -125,3 +136,13 @@ ON cohorte.idCohorte=alumno.idCohorte
 INNER JOIN carrera
 ON carrera.idCarrera = cohorte.idCarrera
 WHERE carrera.idCarrera = 1;
+
+
+SELECT round(avg(year(curdate()) - year(fechaNacimiento)),2) as Edad
+FROM alumno
+ORDER BY fechaNacimiento;
+-- 32.94 promedio de la edad con valores extremos
+-- 22.94 Promedio de la edad sin valores extremos.
+UPDATE alumno
+SET fechaNacimiento = '2002-01-02'
+WHERE idAlumno = 127;

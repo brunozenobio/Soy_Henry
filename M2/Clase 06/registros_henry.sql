@@ -1,5 +1,13 @@
 USE henry_hc_05;
 
+
+SET foreign_key_checks = 0;
+TRUNCATE TABLE alumno;
+TRUNCATE TABLE carrera;
+TRUNCATE TABLE cohorte;
+TRUNCATE TABLE instructor;
+SET foreign_key_checks = 1;
+
 #Se insertan valores en la tabla carreras.
 
 INSERT INTO carrera (nombre)
@@ -15,17 +23,17 @@ SELECT * FROM carrera;
 
 # Hay que tener en cuenta que algunas cedulas en ciertos paises contienen valores alfanuméricos o simplemente numéricos. En este caso tomaremos la suposición de que estamos trabajando con una DB con valores alfanuméricos en la cédula.
 
-INSERT instructor (cedulaIdentidad, nombre, apellido, fechaNacimiento, fechaIncorporacion) 
-VALUES ('25456879','Antonio','Barrios','1981-7-9','2019-11-8');
+INSERT INTO instructor (cedulaIdentidad, nombre, apellido, fechaNacimiento, fechaIncorporacion) 
+VALUES (25456879,'Antonio','Barrios','1981-7-9','2019-11-8');
 
-INSERT instructor (cedulaIdentidad, nombre, apellido, fechaNacimiento, fechaIncorporacion) 
-VALUES ('28456321','Lucia','Fernandez','1992-5-25','2019-11-8'),
-('27198354','Leo','Paris','1985-6-20','2021-8-15'),
-('36987520','Agustín','Casagne','1988-8-17','2021-8-15'),
-('33456215','Franco','Caseros','1995-5-1','2021-8-15'),
-('30521369','Dario','Ramirez','1989-7-20','2021-12-1'),
-('28856789','Agustina','Medina','1991-3-8','2021-12-1'),
-('33128987','Jorge','Perez','1988-2-19','2021-12-1');
+INSERT INTO instructor (cedulaIdentidad, nombre, apellido, fechaNacimiento, fechaIncorporacion) 
+VALUES (28456321,'Lucia','Fernandez','1992-5-25','2019-11-8'),
+(27198354,'Leo','Paris','1985-6-20','2021-8-15'),
+(36987520,'Agustín','Casagne','1988-8-17','2021-8-15'),
+(33456215,'Franco','Caseros','1995-5-1','2021-8-15'),
+(30521369,'Dario','Ramirez','1989-7-20','2021-12-1'),
+(28856789,'Agustina','Medina','1991-3-8','2021-12-1'),
+(33128987,'Jorge','Perez','1988-2-19','2021-12-1');
 
 #Se insertan valores en la tabla cohortes.
 INSERT INTO cohorte 
