@@ -9,10 +9,9 @@ FROM alumno;
 #Hay un total de 180 alumnos
 
 # Ejercicio 3
-SELECT count(*)
+SELECT a.idCohorte,count(*)
 FROM alumno a
-JOIN cohorte c ON c.idCohorte = a.idCohorte
-GROUP BY c.idCohorte;
+GROUP BY a.idCohorte;
 # Cada cohorte tiene 20 alumnos
 
 # Ejercicio 4 
@@ -21,6 +20,8 @@ FROM alumno
 ORDER BY fechaIngreso DESC;
 
 # Ejercicio 5  y 6
+
+#################ALTERNATIVA 1##############
 SELECT nombre
 FROM alumno
 ORDER BY fechaIngreso
@@ -31,7 +32,20 @@ FROM alumno
 ORDER BY fechaIngreso
 LIMIT 1;
 
+############ALTERNATIVA 2##############
+SELECT min(fechaIngreso)
+FROM alumno;
+
+
+#########ALTERNATIVA 3############# LA MAS CORRECTA
+SELECT fechaIngreso
+FROM alumno
+WHERE fechaIngreso = (SELECT min(fechaIngreso) FROM alumno);
+
+
+
 # Ingreso el 4 de diciembre de 2019
+
 
 # Ejercicio 7 
 SELECT nombre
@@ -41,31 +55,33 @@ LIMIT 1;
 # El ultimo alumno que ingreso es Jason
 
 # Ejercicio 8 
-SELECT count(*) as AlumnosPorAño
+SELECT  year(fechaIngreso) as AñoIngreso,count(*) as AlumnosPorAño
 FROM alumno
-GROUP BY year(fechaIngreso);
+GROUP BY AñoIngreso
+ORDER BY 1; # Ordena por columna 1
 
 # Ejercicio 9 
-SELECT weekofyear(fechaIngreso) as Semana,count(*) as AlumnosPorSemana,year(fechaIngreso) as Año
+SELECT year(fechaIngreso) as Año,weekofyear(fechaIngreso) as Semana,count(*) as Alumnos
 FROM alumno
-GROUP BY weekofyear(fechaIngreso),year(fechaIngreso);
+GROUP BY año,semana
+ORDER BY 1;
 
 # Ejercicio 10
 SELECT count(*) as AlumnosPorAño,year(fechaIngreso)
 FROM alumno
 GROUP BY year(fechaIngreso)
-HAVING count(*)>20;
-
+HAVING AlumnosPorAño>20
+ORDER BY 1;
 # EN los años 2020 2021 2022
 
 # Ejercicio 11
-SELECT concat(nombre,' ',apellido) as NombreYApellido,timestampdiff(year,fechaNacimiento,curdate()) ##PASO LA UNIDAD EN QUE QUIERO EL RESULTADO; LA FECHA MAYOR,LA FECHA MENOR
+SELECT concat(nombre,' ',apellido) as NombreYApellido,timestampdiff(year,fechaNacimiento,curdate()) as Edad ##PASO LA UNIDAD EN QUE QUIERO EL RESULTADO; LA FECHA MAYOR,LA FECHA MENOR
 FROM instructor;
 # Si se puede calcular la edad
 
 SELECT concat(nombre,' ',apellido) as NombreYApellido,fechaNacimiento,timestampdiff(year,fechaNacimiento,curdate()) as Edad,date_add(fechaNacimiento,interval timestampdiff(year,fechaNacimiento,curdate()) year ) as Ver
 FROM instructor;
-# Solo cuenta los años
+# Timestamptdiff Cuenta tambien los dias por lo tanto es correcta para calcular la edad 
 
 
 
