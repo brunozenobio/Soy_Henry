@@ -6,6 +6,20 @@ método de envío mostrando para cada registro, qué porcentaje representa
 del total del año. Resolver utilizando Subconsultas y Funciones Ventana, 
 luego comparar la diferencia en la demora de las consultas.
 */
+# COMO PARA CADA REGISTRO QUIERO VER EL PROCENTAJE DEL TOTAL DE ANIO SOBRE LA TABLA QUE CADA REGISTRO ES UN ANIO POR ENVIO
+# VOY A HAER UNA PARTICION SOBRE EL ANIO,PARA CALCULAR EL TOTAL DEL ANIO Y COMPARAR CON ANIO Y ENVIO
+
+SELECT anio,envio_id,cantidad_anio_envio,
+	   cantidad_anio_envio / SUM(cantidad_anio_envio) OVER (PARTITION BY anio) as fraccion_envio_por_anio
+FROM
+
+		(SELECT year(s.OrderDate) as anio,s.ShipMethodID as envio_id,SUM(d.OrderQty) as cantidad_anio_envio
+		FROM salesorderheader s 
+		JOIN salesorderdetail d using(SalesOrderID)
+		JOIN shipmethod p
+		GROUP BY anio,envio_id) v;
+
+
 
 # SIN FUNCION VENTANA
 
@@ -46,6 +60,21 @@ Obtener un listado por categoría de productos,
 con el valor total de ventas y productos vendidos, 
 mostrando para ambos, su porcentaje respecto del total.
 */
+
+SELECT categoria,cantidad_categoria,format(total_categoria,4,'es_ES'),
+	SUM(cantidad_categoria) OVER () as cantidad_productos,
+    SUM(total_categoria) OVER () as total_productos,
+    ROUND(cantidad_categoria / SUM(cantidad_categoria)  OVER (),3) * 100 as porcentaje_cantidad_categoria,
+     ROUND(total_categoria / SUM(total_categoria) OVER (),3)*100 as porcentaje_total_categoria
+FROM
+	(SELECT pc.ProductCategoryID as categoria_id,pc.Name as categoria,SUM(d.OrderQty) as cantidad_categoria,SUM(d.LineTotal) as total_categoria
+	FROM salesorderdetail d
+	JOIN product p using(ProductID)
+	JOIN productsubcategory ps using(ProductSubcategoryID)
+	JOIN productcategory pc using(ProductCategoryID)
+	GROUP BY categoria_id) v;
+
+
 #CON FUNCION VENTANA
 SELECT categoria,
 		cantidad_categoria/SUM(cantidad_categoria) OVER() as fraccion_c,
@@ -88,8 +117,8 @@ Obtener un listado por país (según la dirección de envío),
 SELECT pais,
 	   ventas_pais,
        total_pais,
-       ventas_pais / SUM(ventas_pais) OVER () as fraccion_cantidadPais,
-       total_pais / SUM(total_pais) OVER () as fraccion_cantidadPais
+       ROUND(ventas_pais / SUM(ventas_pais) OVER (),4)*100 as porcentaje_cantidad_cantidadPais,
+       ROUND(total_pais / SUM(total_pais) OVER (),4)*100 as porcentaje_total_cantidadPais
        
 FROM
 	(SELECT c.Name as pais,SUM(d.OrderQty) as ventas_pais,SUM(d.LineTotal) as total_pais
@@ -108,18 +137,18 @@ FROM
 Obtener por ProductID, los valores correspondientes a la mediana de las ventas (LineTotal),
  sobre las ordenes realizadas. Investigar las funciones FLOOR() y CEILING().
 */
-
+ 
 SELECT producto,AVG(total_producto),Cantidad,Floor(Cantidad / 2), ceiling(Cantidad / 2),Fila
 FROM (SELECT ProductID as producto ,LineTotal as total_producto,
 	   COUNT(*) OVER (PARTITION BY ProductID ) as Cantidad,
-	   ROW_NUMBER() OVER (PARTITION BY ProductID ORDER BY LineTotal DESC ) as Fila
+	   ROW_NUMBER() OVER (PARTITION BY ProductID ORDER BY LineTotal DESC ) as Fila # ordeno por totales(para la mediana) agrupado por producto
 		FROM salesorderheader s
 		JOIN salesorderdetail using(SalesOrderID)
         ) j
         WHERE Fila = Floor(Cantidad / 2) AND Fila = ceiling(Cantidad / 2 )
-			OR Fila = ceiling((Cantidad / 2))
+			OR Floor(Cantidad / 2)  = ceiling((Cantidad  / 2))+1 # Calcula el promedio de e o los valores que estan en la mmitad
 GROUP BY producto;
 
 
-
-
+####FORMAT() PARA DAR FORMATO CON UNIDADES DE MIl
+SELECT format(123123123,4,'es_Es')
