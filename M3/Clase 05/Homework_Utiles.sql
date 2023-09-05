@@ -1,5 +1,5 @@
 -- Homework.
-use henry_m3;
+use test;
 -- 2)
 SET GLOBAL log_bin_trust_function_creators = 1;
 
@@ -8,6 +8,7 @@ SET GLOBAL log_bin_trust_function_creators = 1;
 DROP FUNCTION IF EXISTS `UC_Words`;
 DELIMITER $$
 CREATE DEFINER=`root`@`localhost` FUNCTION `UC_Words`( str VARCHAR(255) ) RETURNS varchar(255) CHARSET utf8
+
 BEGIN  
   DECLARE c CHAR(1);  
   DECLARE s VARCHAR(255);  

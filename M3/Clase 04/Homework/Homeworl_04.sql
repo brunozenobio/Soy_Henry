@@ -39,7 +39,7 @@ CREATE TABLE empleado (
                     Surcursal VARCHAR(50),
                     Sector VARCHAR(40),
                     Cargo Varchar(40),
-                    Salario VARCHAR(40)
+                    Salario DECIMAL(13,3)
 
 );
 ########################
@@ -72,7 +72,8 @@ CREATE TABLE cliente (
         Usuario_Alta VARCHAR(40),
         Fecha_Modificacion DATE,
         Usuario_Modificacion VARCHAR(30),
-        Marca_Baja INT
+        Marca_Baja TINYINT,
+        col10 VARCHAR(1)
 );
 ########################
 #########PRODUCTOS##########
@@ -137,11 +138,11 @@ SHOW GRANTS FOR 'root'@'localhost';
 #sucursal
 
 #########SUCURSALES##########
-LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\Sucursales1.csv'
+LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\Sucursales.csv'
 INTO TABLE sucursal
 CHARACTER SET utf8mb4
-FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\"'
-LINES STARTING BY '\"' TERMINATED BY '\n'
+FIELDS TERMINATED BY ';' OPTIONALLY ENCLOSED BY '\"' ESCAPED BY '\"'
+LINES  TERMINATED BY '\n'
 IGNORE 1 LINES;
 
 #########EMPLEADOS##########
@@ -163,7 +164,7 @@ LINES TERMINATED BY '\n' IGNORE 1 LINES;
 LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\Clientes.csv' 
 INTO TABLE cliente
 CHARACTER SET utf8mb4
-FIELDS TERMINATED BY ',' ENCLOSED BY '"' 
+FIELDS TERMINATED BY ';' ENCLOSED BY '"' 
 LINES TERMINATED BY '\n' 
 IGNORE 1 LINES;
 
@@ -212,4 +213,10 @@ INTO TABLE canal_venta
 FIELDS TERMINATED BY ',' ENCLOSED BY '' ESCAPED BY ''
 LINES  TERMINATED BY '\n' 
 IGNORE 1 LINES;
+
+
+
+
+
+
 
