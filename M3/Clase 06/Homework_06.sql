@@ -89,6 +89,9 @@ SET ProvinciaNormal = ProvinciaOriginal  WHERE ProvinciaNormal = '';
 SELECT DISTINCT ProvinciaNormal
 FROM aux_localidades
  WHERE ProvinciaNormal NOT LIKE '%Valor%';
+ 
+ UPDATE localidad 
+ SET Localidad = 'Capital Federal' WHERE Localidad LIKE '%Capital%' AND IdProvincia IN (1,2);
 
 UPDATE localidad 
 SET Localidad = TRIM(Localidad);
@@ -169,6 +172,9 @@ ALTER TABLE localidad
 MODIFY COLUMN IdProvincia INT NOT NULL,
 ADD FOREIGN KEY (IdProvincia) REFERENCES provincia(IdProvincia);
 
+ALTER TABLE cliente DROP  Provincia,DROP IdProvincia,DROP Localidad;
+ALTER TABLE proveedor DROP Departamen,DROP State, DROP Country;
+ALTER TABLE sucursal DROP Localidad,DROP Provincia,DROP IdProvincia;
 
 
 
@@ -187,7 +193,7 @@ ALTER TABLE cliente ADD RangoEtario VARCHAR(30) DEFAULT '' AFTER Edad;
 UPDATE cliente
 SET RangoEtario = '15-25' WHERE Edad BETWEEN 15 AND 25 ;
 UPDATE cliente
-SET RangoEtario = '25-36' WHERE Edad BETWEEN 26 AND 36 ;
+SET RangoEtario = '26-36' WHERE Edad BETWEEN 26 AND 36 ;
 UPDATE cliente
 SET RangoEtario = '37-47' WHERE Edad BETWEEN 37 AND 47 ;
 UPDATE cliente
@@ -207,117 +213,30 @@ SELECT Precio
 FROM venta
 WHERE Precio > @promedio + @desviacionEstandar * 3 OR Precio <@promedio - @desviacionEstandar * 3;
 
-SELECT Idsucursal,AVG(Precio) as promedio_por_sucursal,STDDEV(Precio) as desviacion_por_sucursal
-FROM venta
-GROUP BY Idsucursal;
+SELECT IdTipoProducto,AVG(v.Precio) as promedio_por_sucursal,STDDEV(v.Precio) as desviacion_por_sucursal
+FROM venta v JOIN producto p USING(IdProducto)
+GROUP BY p.IdTipoProducto;
 
 -- OUTLIERS DE PRECIO POR SUCURSAL
 
-SELECT Idsucursal,Precio
-From (
-SELECT Idsucursal,Precio,
-		AVG(Precio) OVER(PARTITION BY Idsucursal) as promedio_por_sucursal,
-        STDDEV(Precio) OVER(PARTITION BY Idsucursal) as desviacion_por_sucursal,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) - 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Minimo,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) + 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Maximo
-FROM venta) v
-WHERE Precio < Minimo OR Precio > Maximo ;
-
-
--- PRECIO POR SUCURSAL SIN OUTLIERS
-SELECT Idsucursal,Precio
-From (
-SELECT Idsucursal,Precio,
-		AVG(Precio) OVER(PARTITION BY Idsucursal) as promedio_por_sucursal,
-        STDDEV(Precio) OVER(PARTITION BY Idsucursal) as desviacion_por_sucursal,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) - 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Minimo,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) + 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Maximo
-FROM venta) v
-WHERE Precio BETWEEN Minimo and Maximo ;
-
-
+SELECT IdProducto,Precio
+FROM(
+	SELECT IdProducto,Precio,
+		AVG(Precio) OVER (PARTITION BY IdProducto) - 3*STDDEV(Precio) OVER (PARTITION BY IdProducto) as MinimoOut,
+		AVG(Precio) OVER (PARTITION BY IdProducto) + 3*STDDEV(Precio) OVER (PARTITION BY IdProducto) as MaximoOut
+	FROM venta)v;
+-- WHERE Precio >  MinimoOut AND Precio < MaximoOut;
 
 -- OUTLIERS DE CANTIDAD POR SUCURSAL
-
-SELECT Idsucursal,Cantidad
-From (
-SELECT Idsucursal,Cantidad,
-		AVG(Cantidad) OVER(PARTITION BY Idsucursal) as promedio_por_sucursal,
-        STDDEV(Cantidad) OVER(PARTITION BY Idsucursal) as desviacion_por_sucursal,
-        AVG(Cantidad) OVER(PARTITION BY Idsucursal) - 3 *  STDDEV(Cantidad) OVER(PARTITION BY Idsucursal) as Minimo,
-        AVG(Cantidad) OVER(PARTITION BY Idsucursal) + 3 *  STDDEV(Cantidad) OVER(PARTITION BY Idsucursal) as Maximo
-FROM venta) v
-WHERE Cantidad < Minimo OR Cantidad > Maximo ;
-
+SELECT IdProducto,Cantidad
+FROM(
+	SELECT IdProducto,Cantidad,
+		AVG(Cantidad) OVER (PARTITION BY IdProducto) - 3*STDDEV(Precio) OVER (PARTITION BY IdProducto) as MinimoOut,
+		AVG(Cantidad) OVER (PARTITION BY IdProducto) + 3*STDDEV(Precio) OVER (PARTITION BY IdProducto) as MaximoOut
+	FROM venta)v;
+-- WHERE Cantidad >  MinimoOut AND Cantidad < MaximoOut;
 
 -- CANTIDAD POR SUCURSAL SIN OUTLIERS
-SELECT Idsucursal,Cantidad
-From (
-SELECT Idsucursal,Cantidad,
-		AVG(Cantidad) OVER(PARTITION BY Idsucursal) as promedio_por_sucursal,
-        STDDEV(Cantidad) OVER(PARTITION BY Idsucursal) as desviacion_por_sucursal,
-        AVG(Cantidad) OVER(PARTITION BY Idsucursal) - 3 *  STDDEV(Cantidad) OVER(PARTITION BY Idsucursal) as Minimo,
-        AVG(Cantidad) OVER(PARTITION BY Idsucursal) + 3 *  STDDEV(Cantidad) OVER(PARTITION BY Idsucursal) as Maximo
-FROM venta) v
-WHERE Cantidad BETWEEN Minimo and Maximo ;
-
-
-
-
-
-
-
-
-
--- Promedio por sucursal con outliers
-SELECT Idsucursal,AVG(Precio) as promedio_sucursal_CO,Max(Precio),Min(Precio)
-From (
-SELECT Idsucursal,Precio,
-		AVG(Precio) OVER(PARTITION BY Idsucursal) as promedio_por_sucursal,
-        STDDEV(Precio) OVER(PARTITION BY Idsucursal) as desviacion_por_sucursal,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) - 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Minimo,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) + 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Maximo
-FROM venta) v
-GROUP BY Idsucursal ;
-
-
-
---  sucursal sin outliers
-SELECT Idsucursal,AVG(Precio) as promedio_sucursal_SO,Max(Precio),Min(Precio)
-From (
-SELECT Idsucursal,Precio,
-		AVG(Precio) OVER(PARTITION BY Idsucursal) as promedio_por_sucursal,
-        STDDEV(Precio) OVER(PARTITION BY Idsucursal) as desviacion_por_sucursal,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) - 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Minimo,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) + 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Maximo
-FROM venta) v
-WHERE Precio BETWEEN Minimo and Maximo
-GROUP BY Idsucursal ;
-
-
-SELECT Idsucursal,t.promedio_sucursal_SO / v.promedio_sucursal_CO * 100 porcentaje_outliers,suma_CO,suma_SO
-FROM (
-SELECT Idsucursal,AVG(Precio) as promedio_sucursal_CO,Max(Precio),Min(Precio),SUM(Precio) as suma_CO
-From (
-SELECT Idsucursal,Precio,
-		AVG(Precio) OVER(PARTITION BY Idsucursal) as promedio_por_sucursal,
-        STDDEV(Precio) OVER(PARTITION BY Idsucursal) as desviacion_por_sucursal,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) - 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Minimo,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) + 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Maximo
-FROM venta) v
-GROUP BY Idsucursal 
-) v JOIN (SELECT Idsucursal,AVG(Precio) as promedio_sucursal_SO,Max(Precio),Min(Precio),SUM(Precio) as suma_SO
-From (
-SELECT Idsucursal,Precio,
-		AVG(Precio) OVER(PARTITION BY Idsucursal) as promedio_por_sucursal,
-        STDDEV(Precio) OVER(PARTITION BY Idsucursal) as desviacion_por_sucursal,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) - 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Minimo,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) + 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Maximo
-FROM venta) v
-WHERE Precio BETWEEN Minimo and Maximo
-GROUP BY Idsucursal ) t using(Idsucursal);
-
-
 
 
 -- AGREGO LOS VALORES OUTLIERS DE PRECIO Y CANTIDAD A LA TABLA AUX VENTA
@@ -327,27 +246,23 @@ GROUP BY Idsucursal ) t using(Idsucursal);
 
 INSERT INTO aux_venta 
 SELECT IdVenta,Fecha,FechaEntrega,Idcliente,Idsucursal,IdEmpleado,IdProducto,Precio,Cantidad,2
-From (
-SELECT IdVenta,Fecha,FechaEntrega,Idcliente,Idsucursal,IdEmpleado,IdProducto,Precio,Cantidad,
-		AVG(Precio) OVER(PARTITION BY Idsucursal) as promedio_por_sucursal,
-        STDDEV(Precio) OVER(PARTITION BY Idsucursal) as desviacion_por_sucursal,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) - 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Minimo,
-        AVG(Precio) OVER(PARTITION BY Idsucursal) + 3 *  STDDEV(Precio) OVER(PARTITION BY Idsucursal) as Maximo
-FROM venta) v
-WHERE Precio < Minimo OR Precio > Maximo ;
-
-
+FROM(
+	SELECT IdVenta,Fecha,FechaEntrega,Idcliente,Idsucursal,IdEmpleado,IdProducto,Precio,Cantidad,
+		AVG(Precio) OVER (PARTITION BY IdProducto) - 3*STDDEV(Precio) OVER (PARTITION BY IdProducto) as MinimoOut,
+		AVG(Precio) OVER (PARTITION BY IdProducto) + 3*STDDEV(Precio) OVER (PARTITION BY IdProducto) as MaximoOut
+	FROM venta)v
+	WHERE Precio >  MinimoOut AND Precio < MaximoOut;
 
 INSERT INTO aux_venta 
 SELECT IdVenta,Fecha,FechaEntrega,Idcliente,Idsucursal,IdEmpleado,IdProducto,Precio,Cantidad,3
-From (
-SELECT IdVenta,Fecha,FechaEntrega,Idcliente,Idsucursal,IdEmpleado,IdProducto,Precio,Cantidad,
-		AVG(Cantidad) OVER(PARTITION BY Idsucursal) as promedio_por_sucursal,
-        STDDEV(Cantidad) OVER(PARTITION BY Idsucursal) as desviacion_por_sucursal,
-        AVG(Cantidad) OVER(PARTITION BY Idsucursal) - 3 *  STDDEV(Cantidad) OVER(PARTITION BY Idsucursal) as Minimo,
-        AVG(Cantidad) OVER(PARTITION BY Idsucursal) + 3 *  STDDEV(Cantidad) OVER(PARTITION BY Idsucursal) as Maximo
-FROM venta) v
-WHERE Cantidad < Minimo OR Cantidad > Maximo ;
+FROM(
+	SELECT IdVenta,Fecha,FechaEntrega,Idcliente,Idsucursal,IdEmpleado,IdProducto,Precio,Cantidad,
+		AVG(Cantidad) OVER (PARTITION BY IdProducto) - 3*STDDEV(Cantidad) OVER (PARTITION BY IdProducto) as MinimoOut,
+		AVG(Cantidad) OVER (PARTITION BY IdProducto) + 3*STDDEV(Cantidad) OVER (PARTITION BY IdProducto) as MaximoOut
+	FROM venta)v
+	WHERE Cantidad >  MinimoOut AND Cantidad < MaximoOut;
+
+
 
 
 -- Agrego la columna outlier en venta, que pondra 0 para los valores de precio y cantidad no atipicos y 1 para los atipicos
@@ -367,37 +282,9 @@ SET Outlier = 0;
 
 -- 1: Return of investment ROI ingresos/inversion -1 
 
--- EL DE HR
-
-SELECT 	venta.Concepto, 
-		venta.SumaVentas, 
-        venta.CantidadVentas, 
-        venta.SumaVentasOutliers,
-        compra.SumaCompras, 
-        compra.CantidadCompras,
-        ((venta.SumaVentas / compra.SumaCompras - 1) * 100) as margen
-FROM
-	(SELECT 	p.Concepto,
-			SUM(v.Precio * v.Cantidad * v.Outlier) 	as 	SumaVentas,
-			SUM(v.Outlier) 							as	CantidadVentas,
-			SUM(v.Precio * v.Cantidad) 				as 	SumaVentasOutliers,
-			COUNT(*) 								as	CantidadVentasOutliers
-	FROM venta v JOIN producto p
-		ON (v.IdProducto = p.IdProducto
-			AND YEAR(v.Fecha) = 2019)
-	GROUP BY p.Concepto) AS venta
-JOIN
-	(SELECT 	p.Concepto,
-			SUM(c.Precio * c.Cantidad) 				as SumaCompras,
-			COUNT(*)								as CantidadCompras
-	FROM compra c JOIN producto p
-		ON (c.IdProducto = p.IdProducto
-			AND YEAR(c.Fecha) = 2019)
-	GROUP BY p.Concepto) as compra
-ON (venta.Concepto = compra.Concepto);
 
 
-SELECT y.Producto,cant_venta_sinOut,cant_venta_conOut,cantidad_compra,venta_conOut,venta_sinOut,compra,(venta_sinOut/compra - 1)*100  as ROI
+SELECT y.Producto,cant_venta_sinOut,cant_venta_conOut,cantidad_compra,venta_conOut,venta_sinOut,compra,(y.venta_sinOut/compra - 1)*100  as ROI
 FROM (
 
 (SELECT p.Concepto as Producto,SUM(v.Cantidad * v.Precio) as venta_conOut ,SUM(v.Cantidad * v.Precio * Outlier) as venta_sinOut,SUM(v.Cantidad*Outlier) as cant_venta_sinOut,
@@ -457,11 +344,11 @@ c.Longitud = a.Latitud;
 
 -- Puedo estimar las coordenadas de una localidad con el promedio de las coordenadas de los clientes que pertencen a esa localidad
 
-SELECT l.IdLocalidad,l.Localidad,AVG(Latitud)
+SELECT l.IdLocalidad,l.Localidad,AVG(l.Latitud)
 FROM cliente
 JOIN localidad l ON cliente.IdLocalidad = l.IdLocalidad
-WHERE Latitud <> 0
-GROUP BY IdLocalidad;
+WHERE l.Latitud <> 0
+GROUP BY l.IdLocalidad;
 
 
 -- GUARDO LAS COORDENDAS EN LOCALIDADES
